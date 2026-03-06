@@ -1183,6 +1183,81 @@
         cursor: pointer;
       }
 
+      /* ===== ONBOARDING ===== */
+      #onboarding {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+      }
+      #onboarding.hidden {
+        display: none;
+      }
+      .onboarding-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 2.4rem;
+        color: var(--primary-dark);
+        margin-bottom: 24px;
+        font-weight: 700;
+      }
+      .onboarding-step {
+        display: none;
+        width: 100%;
+        max-width: 320px;
+        animation: fadeIn 0.3s ease;
+      }
+      .onboarding-step.active {
+        display: block;
+      }
+      .onboarding-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        font-family: "Nunito", sans-serif;
+        font-size: 1.1rem;
+        text-align: center;
+        margin-bottom: 12px;
+        background: var(--card);
+        color: var(--text);
+        outline: none;
+      }
+      .onboarding-input:focus {
+        border-color: var(--primary);
+      }
+      .onboarding-error {
+        color: var(--rose);
+        font-size: 0.85rem;
+        margin-bottom: 16px;
+        min-height: 20px;
+      }
+      .user-btn {
+        width: 100%;
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--card);
+        font-family: "Nunito", sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .user-btn:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+      }
+      .user-btn.papa { color: var(--blue); border-color: var(--blue-light); }
+      .user-btn.maman { color: var(--rose); border-color: var(--rose-light); }
+
       /* ===== RESPONSIVE ===== */
       /* Small phones */
       @media (max-width: 380px) {
@@ -1226,7 +1301,21 @@
     </style>
   </head>
   <body>
-    <div id="app">
+    <div id="onboarding" class="hidden">
+      <div id="step-1" class="onboarding-step active">
+        <h2 class="onboarding-title">Bienvenue !</h2>
+        <p style="margin-bottom: 24px; color: var(--text-mid);">Pour accéder à l'application, veuillez saisir la date de naissance de notre fils.</p>
+        <input type="date" id="birthdate-input" class="onboarding-input" onkeydown="if(event.key==='Enter') checkAuth()" />
+        <div class="onboarding-error" id="auth-error"></div>
+        <button class="btn btn-primary" style="width: 100%" onclick="checkAuth()">Valider</button>
+      </div>
+      <div id="step-2" class="onboarding-step">
+        <h2 class="onboarding-title">Qui es-tu ?</h2>
+        <button class="user-btn papa" onclick="selectUser('papa')">👨 Papa</button>
+        <button class="user-btn maman" onclick="selectUser('maman')">👩 Maman</button>
+      </div>
+    </div>
+    <div id="app" style="display: none">
       <header>
         <span class="header-star">✦</span>
         <span class="header-star">✦</span>
@@ -2664,12 +2753,10 @@
           ...new Set(DB.map((n) => n.name[0].toUpperCase())),
         ].sort();
         const f = state.filters;
+        const userEmoji = state.activeUser === "papa" ? "👨 Papa" : "👩 Maman";
         v.innerHTML = `
     <div class="discover-header">
-      <div class="user-toggle">
-        <button class="${state.activeUser === "papa" ? "active-papa" : ""}" onclick="setActiveUser('papa')">👨 Papa</button>
-        <button class="${state.activeUser === "maman" ? "active-maman" : ""}" onclick="setActiveUser('maman')">👩 Maman</button>
-      </div>
+      <div style="font-size:1.1rem;font-weight:700;color:var(--primary)">${userEmoji}</div>
       <div style="display:flex;gap:6px">
         <button class="filter-toggle ${f.smartMode ? "open" : ""}" onclick="toggleSmart()" title="Suggestions intelligentes">🧠 ${f.smartMode ? "ON" : "OFF"}</button>
         <button class="filter-toggle" onclick="toggleFilters()">⚙ Filtres</button>
@@ -3192,12 +3279,10 @@
             ) / 10
           : 0;
         const explored = list.length + state[u].skipped.length;
+        const userEmoji = u === "papa" ? "👨 Papa" : "👩 Maman";
         v.innerHTML = `
     <div class="list-header"><span class="list-title" style="color:var(--primary)">📊 Statistiques</span>
-      <div class="user-toggle" style="transform:scale(0.85)">
-        <button class="${u === "papa" ? "active-papa" : ""}" onclick="state.activeUser='papa';save();renderStats()">👨 Papa</button>
-        <button class="${u === "maman" ? "active-maman" : ""}" onclick="state.activeUser='maman';save();renderStats()">👩 Maman</button>
-      </div>
+      <div style="font-size:1rem;font-weight:700;color:var(--primary)">${userEmoji}</div>
     </div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-value">${explored}</div><div class="stat-label">Prénoms vus</div></div>
@@ -3256,9 +3341,10 @@
       <label class="toggle-switch"><input type="checkbox" ${state.darkMode ? "checked" : ""} onchange="toggleDarkMode()"><span class="toggle-slider"></span></label></div>
     <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-outline" onclick="exportJSON()" style="flex:1">💾 Exporter données</button>
+      <button class="btn btn-outline" onclick="exportJSON()" style="flex:1">💾 Exporter</button>
       <button class="btn btn-outline" onclick="document.getElementById('import-file').click()" style="flex:1">📂 Importer</button>
     </div>
+    <button class="btn btn-outline" onclick="localStorage.removeItem('petitNomUser');location.reload();" style="width:100%;margin-top:8px">🔄 Changer de profil</button>
     <button class="btn btn-outline" onclick="if(confirm('Tout effacer ? Cette action est irréversible.')){state.papa={list:[],skipped:[],quizDone:false};state.maman={list:[],skipped:[],quizDone:false};dbClearAllNames('papa');dbClearAllNames('maman');navigateTo('discover');updateBadge();this.closest('.modal-bg').remove();toast('Données effacées')}" style="width:100%;margin-top:8px;color:var(--rose);border-color:var(--rose)">🗑️ Tout effacer</button>
   </div></div>`;
         document.body.insertAdjacentHTML("beforeend", html);
@@ -3300,9 +3386,46 @@
           });
       }
 
+      /* ====== ONBOARDING ====== */
+      function checkAuth() {
+        const v = document.getElementById("birthdate-input").value;
+        if (v === "2026-09-08" || v === "08/09/2026" || v === "08/09/26") {
+          document.getElementById("auth-error").textContent = "";
+          document.getElementById("step-1").classList.remove("active");
+          document.getElementById("step-2").classList.add("active");
+        } else {
+          document.getElementById("auth-error").textContent = "Date incorrecte.";
+        }
+      }
+
+      function selectUser(user) {
+        state.activeUser = user;
+        localStorage.setItem("petitNomAuth", "true");
+        localStorage.setItem("petitNomUser", user);
+        document.getElementById("onboarding").classList.add("hidden");
+        document.getElementById("app").style.display = "flex";
+        save();
+        renderDiscover();
+        if (state.currentView === "stats") renderStats();
+        if (state.currentView === "papa" || state.currentView === "maman") renderList(state.currentView);
+      }
+
       /* ====== INIT ====== */
       async function init() {
+        const isAuth = localStorage.getItem("petitNomAuth") === "true";
+        const savedUser = localStorage.getItem("petitNomUser");
+
+        if (!isAuth || !savedUser) {
+          document.getElementById("onboarding").classList.remove("hidden");
+        } else {
+          document.getElementById("app").style.display = "flex";
+          state.activeUser = savedUser;
+        }
+
         try { await load(); } catch(e) { console.error('Load failed:', e); }
+
+        if (isAuth && savedUser) state.activeUser = savedUser;
+
         if (state.darkMode) document.documentElement.classList.add("dark");
         const btn = $("#dark-btn");
         if (btn) btn.textContent = state.darkMode ? "☀️" : "🌙";
