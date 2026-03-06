@@ -1,0 +1,5 @@
+data.json
+petit-nom-*.json
+server.js
+node_modules/
+.DS_Store
