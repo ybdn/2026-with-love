@@ -650,7 +650,8 @@
       .list-item .rank.top3 {
         color: var(--gold);
       }
-      .list-item .item-info {
+      .list-item .item-info,
+      .common-item .item-info {
         flex: 1;
         min-width: 0;
       }
@@ -659,13 +660,15 @@
         font-size: 0.95rem;
         color: var(--text);
       }
-      .list-item .item-meta {
+      .list-item .item-meta,
+      .common-item .item-meta {
         display: flex;
         align-items: center;
         gap: 6px;
         margin-top: 2px;
       }
-      .list-item .item-origin {
+      .list-item .item-origin,
+      .common-item .item-origin {
         font-size: 0.65rem;
         font-weight: 700;
         color: #fff;
@@ -674,7 +677,8 @@
         text-transform: uppercase;
         letter-spacing: 0.03em;
       }
-      .list-item .item-meaning {
+      .list-item .item-meaning,
+      .common-item .item-meaning {
         font-size: 0.72rem;
         color: var(--text-light);
         font-style: italic;
@@ -761,12 +765,10 @@
         min-width: 24px;
         text-align: center;
       }
-      .common-item .item-info {
-        flex: 1;
-      }
       .common-item .item-name {
         font-weight: 700;
         font-size: 1rem;
+        color: var(--text);
       }
       .common-scores {
         display: flex;
