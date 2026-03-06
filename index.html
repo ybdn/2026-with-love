@@ -2317,7 +2317,7 @@
       /* ====== SUPABASE ====== */
       const SUPABASE_URL = 'https://imveutefxuravyvtrpnc.supabase.co';
       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltdmV1dGVmeHVyYXZ5dnRycG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDA1NDIsImV4cCI6MjA4ODM3NjU0Mn0.ytdCsVUrAd3-ZErgE53vKTq5tQPCUGX97JZa7Nn5Wko';
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       /* ====== PERSISTENCE ====== */
       let saveTimer = null;
@@ -2325,7 +2325,7 @@
         clearTimeout(saveTimer);
         saveTimer = setTimeout(async () => {
           try {
-            await supabase.from('petitnom_state').upsert({ id: 'default', state: state, updated_at: new Date().toISOString() });
+            await sb.from('petitnom_state').upsert({ id: 'default', state: state, updated_at: new Date().toISOString() });
             const ind = $('#save-indicator');
             if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1200); }
           } catch (e) { console.error('Save error:', e); }
@@ -2333,7 +2333,7 @@
       }
       async function load() {
         try {
-          const { data, error } = await supabase.from('petitnom_state').select('state').eq('id', 'default').single();
+          const { data, error } = await sb.from('petitnom_state').select('state').eq('id', 'default').single();
           if (!error && data && data.state && data.state.papa) {
             Object.assign(state, data.state);
           }
@@ -3189,7 +3189,7 @@
 
       /* ====== INIT ====== */
       async function init() {
-        await load();
+        try { await load(); } catch(e) { console.error('Load failed:', e); }
         if (state.darkMode) document.documentElement.classList.add("dark");
         const btn = $("#dark-btn");
         if (btn) btn.textContent = state.darkMode ? "☀️" : "🌙";
