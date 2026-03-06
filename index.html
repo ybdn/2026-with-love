@@ -2291,25 +2291,145 @@
       const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       /* ====== PERSISTENCE ====== */
-      let saveTimer = null;
-      function save() {
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(async () => {
+
+      // --- Save settings only (filters, darkMode, familyName, etc.) ---
+      let settingsTimer = null;
+      function saveSettings() {
+        clearTimeout(settingsTimer);
+        settingsTimer = setTimeout(async () => {
           try {
-            await sb.from('petitnom_state').upsert({ id: 'default', state: state, updated_at: new Date().toISOString() });
-            const ind = $('#save-indicator');
-            if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1200); }
-          } catch (e) { console.error('Save error:', e); }
+            const settings = {
+              currentView: state.currentView,
+              activeUser: state.activeUser,
+              darkMode: state.darkMode,
+              surpriseMode: state.surpriseMode,
+              familyName: state.familyName,
+              filters: state.filters,
+            };
+            await sb.from('petitnom_state').upsert({ id: 'default', state: settings, updated_at: new Date().toISOString() });
+            showSaveIndicator();
+          } catch (e) { console.error('Save settings error:', e); }
         }, 500);
       }
+
+      function showSaveIndicator() {
+        const ind = $('#save-indicator');
+        if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1200); }
+      }
+
+      // --- DB helpers for papa/maman names ---
+      async function dbAddName(who, item) {
+        try {
+          const table = who + '_names';
+          await sb.from(table).upsert({
+            name: item.name,
+            origin: item.origin,
+            meaning: item.meaning,
+            popularity: item.popularity,
+            rating: item.rating,
+            comment: item.comment || '',
+            tags: item.tags || [],
+          });
+          showSaveIndicator();
+        } catch (e) { console.error('dbAddName error:', e); }
+      }
+
+      async function dbRemoveName(who, name) {
+        try {
+          await sb.from(who + '_names').delete().eq('name', name);
+          showSaveIndicator();
+        } catch (e) { console.error('dbRemoveName error:', e); }
+      }
+
+      async function dbUpdateRating(who, name, rating) {
+        try {
+          await sb.from(who + '_names').update({ rating }).eq('name', name);
+          showSaveIndicator();
+        } catch (e) { console.error('dbUpdateRating error:', e); }
+      }
+
+      async function dbUpdateComment(who, name, comment) {
+        try {
+          await sb.from(who + '_names').update({ comment }).eq('name', name);
+          showSaveIndicator();
+        } catch (e) { console.error('dbUpdateComment error:', e); }
+      }
+
+      async function dbAddSkipped(who, name) {
+        try {
+          await sb.from(who + '_skipped').upsert({ name });
+        } catch (e) { console.error('dbAddSkipped error:', e); }
+      }
+
+      async function dbRemoveSkipped(who, name) {
+        try {
+          await sb.from(who + '_skipped').delete().eq('name', name);
+        } catch (e) { console.error('dbRemoveSkipped error:', e); }
+      }
+
+      async function dbClearSkipped(who) {
+        try {
+          await sb.from(who + '_skipped').delete().neq('id', 0); // delete all
+        } catch (e) { console.error('dbClearSkipped error:', e); }
+      }
+
+      async function dbClearAllNames(who) {
+        try {
+          await sb.from(who + '_names').delete().neq('id', 0);
+          await sb.from(who + '_skipped').delete().neq('id', 0);
+        } catch (e) { console.error('dbClearAll error:', e); }
+      }
+
+      // --- Load all data from the new tables ---
       async function load() {
         try {
-          const { data, error } = await sb.from('petitnom_state').select('state').eq('id', 'default').single();
-          if (!error && data && data.state && data.state.papa) {
-            Object.assign(state, data.state);
+          // Load settings
+          const { data: settingsData } = await sb.from('petitnom_state').select('state').eq('id', 'default').single();
+          if (settingsData && settingsData.state) {
+            const s = settingsData.state;
+            if (s.currentView) state.currentView = s.currentView;
+            if (s.activeUser) state.activeUser = s.activeUser;
+            if (s.darkMode !== undefined) state.darkMode = s.darkMode;
+            if (s.surpriseMode !== undefined) state.surpriseMode = s.surpriseMode;
+            if (s.familyName !== undefined) state.familyName = s.familyName;
+            if (s.filters) state.filters = { ...state.filters, ...s.filters };
           }
+
+          // Load papa names
+          const { data: papaNames } = await sb.from('papa_names').select('*').order('rating', { ascending: false });
+          if (papaNames) {
+            state.papa.list = papaNames.map(r => ({
+              name: r.name, origin: r.origin, meaning: r.meaning,
+              popularity: r.popularity, rating: r.rating, comment: r.comment || '', tags: r.tags || [],
+            }));
+          }
+
+          // Load maman names
+          const { data: mamanNames } = await sb.from('maman_names').select('*').order('rating', { ascending: false });
+          if (mamanNames) {
+            state.maman.list = mamanNames.map(r => ({
+              name: r.name, origin: r.origin, meaning: r.meaning,
+              popularity: r.popularity, rating: r.rating, comment: r.comment || '', tags: r.tags || [],
+            }));
+          }
+
+          // Load papa skipped
+          const { data: papaSkipped } = await sb.from('papa_skipped').select('name');
+          if (papaSkipped) state.papa.skipped = papaSkipped.map(r => r.name);
+
+          // Load maman skipped
+          const { data: mamanSkipped } = await sb.from('maman_skipped').select('name');
+          if (mamanSkipped) state.maman.skipped = mamanSkipped.map(r => r.name);
+
         } catch (e) { console.error('Load error:', e); }
       }
+
+      // --- Legacy save() calls redirect to saveSettings ---
+      function save() {
+        saveSettings();
+      }
+
+      // --- Export / Import ---
       function exportJSON() {
         const blob = new Blob([JSON.stringify(state, null, 2)], {
           type: "application/json",
@@ -2320,21 +2440,36 @@
         a.click();
         toast("Sauvegarde téléchargée !");
       }
-      function importJSON(e) {
+      async function importJSON(e) {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => {
+        reader.onload = async (ev) => {
           try {
             const d = JSON.parse(ev.target.result);
             if (d.papa && d.maman) {
-              Object.assign(state, d);
-              save();
+              // Import papa names
+              for (const item of (d.papa.list || [])) {
+                await dbAddName('papa', item);
+              }
+              for (const name of (d.papa.skipped || [])) {
+                await dbAddSkipped('papa', name);
+              }
+              // Import maman names
+              for (const item of (d.maman.list || [])) {
+                await dbAddName('maman', item);
+              }
+              for (const name of (d.maman.skipped || [])) {
+                await dbAddSkipped('maman', name);
+              }
+              // Reload everything
+              await load();
               navigateTo(state.currentView || "discover");
               updateBadge();
               toast("Données restaurées !");
             } else toast("Fichier invalide");
           } catch (err) {
+            console.error('Import error:', err);
             toast("Erreur de lecture");
           }
         };
@@ -2703,10 +2838,11 @@
       function swipeAction(dir) {
         if (!filteredNames.length) return;
         const n = filteredNames[0];
+        const who = state.activeUser;
         if (dir === "right") {
-          const otherUser = state.activeUser === "papa" ? "maman" : "papa";
+          const otherUser = who === "papa" ? "maman" : "papa";
           const isMatch = state[otherUser].list.some((x) => x.name === n.name);
-          state[state.activeUser].list.push({
+          const item = {
             name: n.name,
             origin: n.origin,
             meaning: n.meaning,
@@ -2714,14 +2850,16 @@
             rating: 3,
             comment: "",
             tags: n.tags,
-          });
+          };
+          state[who].list.push(item);
+          dbAddName(who, item);
           toast(`${n.name} ajouté !`);
           if (isMatch) setTimeout(() => showMatch(n.name), 300);
           updateBadge();
         } else {
-          state[state.activeUser].skipped.push(n.name);
+          state[who].skipped.push(n.name);
+          dbAddSkipped(who, n.name);
         }
-        save();
         filteredNames = getFilteredNames();
         renderCards();
       }
@@ -2759,8 +2897,9 @@
         renderDiscover();
       }
       function resetSkipped() {
-        state[state.activeUser].skipped = [];
-        save();
+        const who = state.activeUser;
+        state[who].skipped = [];
+        dbClearSkipped(who);
         renderDiscover();
       }
       function resetFilters() {
@@ -2801,9 +2940,10 @@
       function recoverName(name, idx) {
         const u = state.activeUser;
         state[u].skipped.splice(idx, 1);
+        dbRemoveSkipped(u, name);
         const entry = DB.find((d) => d.name === name);
-        if (entry)
-          state[u].list.push({
+        if (entry) {
+          const item = {
             name: entry.name,
             origin: entry.origin,
             meaning: entry.meaning,
@@ -2811,8 +2951,10 @@
             rating: 3,
             comment: "",
             tags: entry.tags,
-          });
-        save();
+          };
+          state[u].list.push(item);
+          dbAddName(u, item);
+        }
         updateBadge();
         toast(`${name} ajouté !`);
         const modal = document.querySelector(".modal-bg");
@@ -2866,17 +3008,17 @@
 
       function rate(who, idx, rating) {
         state[who].list[idx].rating = rating;
-        save();
+        dbUpdateRating(who, state[who].list[idx].name, rating);
         renderList(who);
       }
       function setComment(who, idx, val) {
         state[who].list[idx].comment = val;
-        save();
+        dbUpdateComment(who, state[who].list[idx].name, val);
       }
       function removeItem(who, idx) {
         const name = state[who].list[idx].name;
         state[who].list.splice(idx, 1);
-        save();
+        dbRemoveName(who, name);
         renderList(who);
         toast(`${name} retiré`);
         updateBadge();
@@ -3117,7 +3259,7 @@
       <button class="btn btn-outline" onclick="exportJSON()" style="flex:1">💾 Exporter données</button>
       <button class="btn btn-outline" onclick="document.getElementById('import-file').click()" style="flex:1">📂 Importer</button>
     </div>
-    <button class="btn btn-outline" onclick="if(confirm('Tout effacer ? Cette action est irréversible.')){state.papa={list:[],skipped:[],quizDone:false};state.maman={list:[],skipped:[],quizDone:false};save();navigateTo('discover');updateBadge();this.closest('.modal-bg').remove();toast('Données effacées')}" style="width:100%;margin-top:8px;color:var(--rose);border-color:var(--rose)">🗑️ Tout effacer</button>
+    <button class="btn btn-outline" onclick="if(confirm('Tout effacer ? Cette action est irréversible.')){state.papa={list:[],skipped:[],quizDone:false};state.maman={list:[],skipped:[],quizDone:false};dbClearAllNames('papa');dbClearAllNames('maman');navigateTo('discover');updateBadge();this.closest('.modal-bg').remove();toast('Données effacées')}" style="width:100%;margin-top:8px;color:var(--rose);border-color:var(--rose)">🗑️ Tout effacer</button>
   </div></div>`;
         document.body.insertAdjacentHTML("beforeend", html);
       }
