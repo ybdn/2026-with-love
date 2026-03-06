@@ -41,8 +41,8 @@
         --radius: 16px;
         --radius-sm: 10px;
         --radius-xs: 6px;
-        --nav-h: 72px;
-        --header-h: 60px;
+        --nav-h: 60px;
+        --header-h: 44px;
         --origin-fr: #7eb5d6;
         --origin-he: #d4a843;
         --origin-ar: #5ba88c;
@@ -103,27 +103,19 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(
-          135deg,
-          var(--primary-light) 0%,
-          var(--bg) 100%
-        );
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg) 100%);
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
         position: relative;
         z-index: 10;
+        padding: 0 56px;
       }
       header h1 {
         font-family: "Cormorant Garamond", serif;
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--primary-dark);
         letter-spacing: 0.02em;
-      }
-      header h1 span {
-        color: var(--text-light);
-        font-weight: 400;
-        font-size: 0.85em;
       }
       .header-actions {
         position: absolute;
@@ -201,7 +193,7 @@
       .view {
         display: none;
         min-height: 100%;
-        padding: 16px 16px calc(var(--nav-h) + 16px);
+        padding: 10px 12px calc(var(--nav-h) + 10px);
       }
       .view.active {
         display: block;
@@ -231,16 +223,17 @@
         background: none;
         border: none;
         font-family: "Nunito", sans-serif;
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 600;
         color: var(--text-light);
         cursor: pointer;
         transition: color 0.2s;
-        gap: 4px;
+        gap: 2px;
         position: relative;
+        -webkit-tap-highlight-color: transparent;
       }
       .nav-btn .nav-icon {
-        font-size: 1.4rem;
+        font-size: 1.2rem;
         line-height: 1;
       }
       .nav-btn.active {
@@ -277,8 +270,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 12px;
-        gap: 8px;
+        margin-bottom: 8px;
+        gap: 6px;
         flex-wrap: wrap;
       }
       .user-toggle {
@@ -289,15 +282,16 @@
         border: 1px solid var(--border);
       }
       .user-toggle button {
-        padding: 8px 16px;
+        padding: 6px 14px;
         border: none;
         background: none;
         font-family: "Nunito", sans-serif;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 600;
         cursor: pointer;
         color: var(--text-mid);
         transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
       }
       .user-toggle button.active-papa {
         background: var(--blue-light);
@@ -308,14 +302,15 @@
         color: var(--rose);
       }
       .filter-toggle {
-        padding: 8px 14px;
+        padding: 6px 10px;
         border-radius: var(--radius);
         border: 1px solid var(--border);
         background: var(--card);
         font-family: "Nunito", sans-serif;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         cursor: pointer;
         color: var(--text-mid);
+        -webkit-tap-highlight-color: transparent;
       }
       .filter-toggle.open {
         background: var(--primary-light);
@@ -387,13 +382,13 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-height: 360px;
+        min-height: calc(100vh - var(--header-h) - var(--nav-h) - 180px);
         position: relative;
       }
       .card-stack {
         position: relative;
-        width: 280px;
-        height: 340px;
+        width: min(85vw, 320px);
+        height: min(55vh, 380px);
         margin: 0 auto;
       }
       .name-card {
@@ -1189,68 +1184,44 @@
       }
 
       /* ===== RESPONSIVE ===== */
-      @media (min-width: 600px) {
-        .view {
-          padding: 24px 32px calc(var(--nav-h) + 24px);
-          max-width: 540px;
-          margin: 0 auto;
-        }
-        .card-stack {
-          width: 320px;
-          height: 380px;
-        }
-        .name-card .card-name {
-          font-size: 3rem;
-        }
+      /* Small phones */
+      @media (max-width: 380px) {
+        .card-stack { width: 80vw; height: 48vh; }
+        .name-card .card-name { font-size: 2rem; }
+        .name-card .card-meaning { font-size: 0.85rem; }
+        .card-btn { width: 48px; height: 48px; font-size: 1.2rem; }
+        .discover-header { gap: 4px; }
+        .user-toggle button { padding: 5px 10px; font-size: 0.7rem; }
+        .filter-toggle { padding: 5px 8px; font-size: 0.7rem; }
       }
+      /* Tablets */
+      @media (min-width: 600px) {
+        :root { --header-h: 50px; }
+        .view { padding: 20px 32px calc(var(--nav-h) + 24px); max-width: 540px; margin: 0 auto; }
+        .card-stack { width: 340px; height: 400px; }
+        .name-card .card-name { font-size: 3rem; }
+        header h1 { font-size: 1.4rem; }
+      }
+      /* Desktop */
       @media (min-width: 900px) {
-        :root {
-          --nav-h: 0px;
-          --header-h: 64px;
-        }
+        :root { --nav-h: 0px; --header-h: 52px; }
         nav#bottom-nav {
-          position: static;
-          height: auto;
-          border-top: none;
-          box-shadow: none;
-          justify-content: center;
-          gap: 4px;
-          padding: 8px 16px;
-          background: var(--bg2);
-          border-bottom: 1px solid var(--border);
+          position: static; height: auto; border-top: none; box-shadow: none;
+          justify-content: center; gap: 4px; padding: 8px 16px;
+          background: var(--bg2); border-bottom: 1px solid var(--border);
         }
         .nav-btn {
-          flex: none;
-          flex-direction: row;
-          padding: 8px 20px;
-          border-radius: var(--radius);
-          font-size: 0.8rem;
-          gap: 8px;
+          flex: none; flex-direction: row; padding: 8px 20px;
+          border-radius: var(--radius); font-size: 0.8rem; gap: 8px;
         }
-        .nav-btn .nav-icon {
-          font-size: 1.1rem;
-        }
-        .nav-btn.active::after {
-          display: none;
-        }
-        .nav-btn.active {
-          background: var(--primary-light);
-          color: var(--primary-dark);
-        }
-        #app {
-          flex-direction: column;
-        }
-        #app > nav#bottom-nav {
-          order: -1;
-        }
-        .view {
-          padding: 24px 40px 40px;
-          max-width: 600px;
-        }
-        .nav-btn .badge {
-          top: 2px;
-          right: 4px;
-        }
+        .nav-btn .nav-icon { font-size: 1.1rem; }
+        .nav-btn.active::after { display: none; }
+        .nav-btn.active { background: var(--primary-light); color: var(--primary-dark); }
+        #app { flex-direction: column; }
+        #app > nav#bottom-nav { order: -1; }
+        .view { padding: 24px 40px 40px; max-width: 600px; }
+        .nav-btn .badge { top: 2px; right: 4px; }
+        header h1 { font-size: 1.5rem; }
       }
     </style>
   </head>
@@ -1261,7 +1232,7 @@
         <span class="header-star">✦</span>
         <span class="header-star">✦</span>
         <span class="save-indicator" id="save-indicator">✓ Sauvegardé</span>
-        <h1>Petit Nom <span>✦ trouvez le prénom parfait</span></h1>
+        <h1>✦ Petit Nom</h1>
         <div class="header-actions">
           <button onclick="toggleDarkMode()" id="dark-btn" title="Mode sombre">
             🌙
