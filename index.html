@@ -3076,7 +3076,7 @@
         <span class="drag-handle" title="Réordonner">⠿</span>
         <span class="rank ${i < 3 ? "top3" : ""}">${i + 1}</span>
         <div class="item-info">
-          <div class="item-name">${item.name}${state.familyName ? ' <span style="color:var(--text-light);font-weight:400">' + state.familyName + "</span>" : ""}${initW ? '<span style="color:var(--rose);font-size:0.7rem"> ⚠️' + initW + "</span>" : ""}</div>
+          <div class="item-name">${item.name}${initW ? '<span style="color:var(--rose);font-size:0.7rem"> ⚠️' + initW + "</span>" : ""}</div>
           <div class="item-meta">${originBadge(item.origin, true)}<span class="item-meaning">${item.meaning}</span></div>
           <div class="item-comment"><input type="text" placeholder="Ajouter une note…" value="${item.comment || ""}" onchange="setComment('${who}',${i},this.value)" onclick="event.stopPropagation()"></div>
         </div>
